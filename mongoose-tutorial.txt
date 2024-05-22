@@ -1,0 +1,60 @@
+/* save() 메서드 사용 시 인스턴스를 생성하고, save() 를 호출하여 데이터베이스에 새로운 데이터를 쓸 수 있음.
+const student1 = new User({
+    email: 'hmusk7@gmail.com',
+    password: '123123!',
+});
+
+await student1.save();
+
+const firstArticle = await Blog.findOne({});
+console.log(firstArticle);*/
+
+/* create() 은 인스턴스 생성 및 데이터베이스에 저장을 한번에 수행해줌
+const student1 = await User.create({
+    email: 'abcabc',
+    password: '134141335!#!4',
+});
+
+// findone 할 필요 없이 console.log 하면 바로 _id와 함께 문서를 반환함
+console.log(student1);*/
+
+/* Update 도 매우 간단함. 오브젝트를 불러오고 그냥 수정한 후 Save 하면 됨.
+student1.email = "asdfdf";
+await student1.save();
+console.log(student1);*/
+
+/*
+// 다음과 같이 원하는 Document를 검색 가능
+const student = await User.findById("664c67b273fc9683102e879f").exec();
+console.log(student);
+
+// 원하는 정보만 검색할 수도 있음: email, password
+const student2 = await User.findById("664c67b273fc9683102e879f", "email password").exec();
+console.log(student2);*/
+
+/*
+// deleteOne 또는 deleteMany 사용 가능 (mongosh 에서 쓰던 것처럼)
+const student3 = await User.deleteMany({ email: ["abcabc", "asdfdf"]});
+console.log(student3);*/
+/*
+const student = await User.create({
+    email: "test@test.com",
+    password: "test123!",
+});*/
+
+/*
+// exists() 는 null 또는 ObjectId (가장 최상위 Document 하나만) 를 반환
+const isExist = await User.exists({ email: "test@test.com"})
+console.log(isExist);
+
+// 찾아서 전체 반환
+const studentFind = await User.find({ email: "test@test.com"});
+console.log(studentFind);
+
+// 찾아서 전체 반환
+const studentWhere = await User.where("email").equals("test@test.com");
+console.log(studentWhere);
+
+// where 에 select 를 추가해서 projection 을 설정할 수 있음
+const studentWhere2 = await User.where("email").equals("test@test.com").select("_id email");
+console.log(studentWhere2);*/
