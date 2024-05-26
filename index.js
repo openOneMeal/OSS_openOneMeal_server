@@ -17,6 +17,8 @@ mongoose.connect(dbUri)
     .catch(err => console.log(err));
 
 app.use(express.json());
+app.use(cors());
+app.options('*', cors());
 
 // 테스트 시에는 3000, 4000 등 임시 포트 사용
 // 배포 시에는 80(HTTP), 또는 443(HTTPS) 포트 사용
@@ -25,7 +27,6 @@ app.listen(process.env.PORT, () => {
 });
 
 // 로그인 처리
-app.options('/api/signin', cors());
 app.post('/api/signin', async (req, res) => {
     const { email, password } = req.body;
 
@@ -57,7 +58,6 @@ app.post('/api/signin', async (req, res) => {
 });
 
 // 계정 생성 처리
-app.options('/api/signup', cors());
 app.post('/api/signup', async (req, res) => {
     const { name, gender, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
