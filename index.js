@@ -1,7 +1,7 @@
-const express = require('express');
-const mongoose = require('mongoose');
+import express from 'express';
+import mongoose from 'mongoose';
 // bcryptjs 는 비밀번호를 안전하게 해시하고 검증하는 기능을 제공하는 라이브러리
-const bcrypt = require('bcryptjs');
+import bcrypt from 'bcryptjs';
 const app = express();
 const dbUri = process.env.MONGODB_URI;
 import Users from './model/Users.js';
