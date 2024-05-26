@@ -6,7 +6,7 @@ const app = express();
 const dbUri = process.env.MONGODB_URI;
 import Users from './model/Users.js';
 
-mongoose.connect(dbUri, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(dbUri)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
