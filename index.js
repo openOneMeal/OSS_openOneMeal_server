@@ -21,7 +21,7 @@ app.use(express.json());
 // 테스트 시에는 3000, 4000 등 임시 포트 사용
 // 배포 시에는 80(HTTP), 또는 443(HTTPS) 포트 사용
 app.listen(process.env.PORT, () => {
-    console.log(`Server running on port 8080`);
+    console.log(`Server running on port ${process.env.PORT}`);
 });
 
 // 로그인 처리

@@ -24,7 +24,6 @@ const usersSchema = new Schema({
     password: {
         type: String,
         required: true,
-        maxlength: 50
     },
     createdAt: {
         type: Date,
