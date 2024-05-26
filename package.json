@@ -1,5 +1,5 @@
 {
-  "name": "oom_server",
+  "name": "oom_server2",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,9 +9,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "오픈한끼 서버",
   "dependencies": {
-    "axios": "^1.7.2",
+    "axios": "^1.7.1",
+    "body-parser": "^1.20.2",
     "express": "^4.19.2",
     "mongoose": "^8.4.0"
   },

@@ -1,10 +1,10 @@
-import User from './model/User.js';
 const express = require('express');
 const mongoose = require('mongoose');
 // bcryptjs 는 비밀번호를 안전하게 해시하고 검증하는 기능을 제공하는 라이브러리
 const bcrypt = require('bcryptjs');
 const app = express();
 const dbUri = process.env.MONGODB_URI;
+import Users from './model/Users.js';
 
 mongoose.connect(dbUri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
@@ -18,11 +18,12 @@ app.listen(8080, () => {
     console.log(`Server running on port 8080`);
 });
 
-app.post('/signin', async (req, res) => {
+// 로그인 처리
+app.post('/api/signin', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        const user = await Users.findOne({ email });
 
         if (!user) {
             return res.status(401).json({status: 401, message: '이메일 혹은 패스워드가 일치하지 않습니다.'});
@@ -45,5 +46,24 @@ app.post('/signin', async (req, res) => {
         return res.status(200).json({ status: 200, message: '로그인 성공' });
     } catch (err) {
         return res.status(500).json({ status: 500, message: 'Server error'});
+    }
+});
+
+// 계정 생성 처리
+app.post('/api/signup', async (req, res) => {
+    const { name, gender, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+        await Users.create({
+            name,
+            gender,
+            email,
+            hashedPassword,
+        })
+        
+        res.status(201).send('계정 생성 성공');
+    } catch (error) {
+        res.status(500).send('계정 생성 중 오류 발생');
     }
 });
