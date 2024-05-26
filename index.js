@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import mongoose from 'mongoose';
 // bcryptjs 는 비밀번호를 안전하게 해시하고 검증하는 기능을 제공하는 라이브러리
 import bcrypt from 'bcryptjs';
@@ -11,6 +12,12 @@ mongoose.connect(dbUri)
     .catch(err => console.log(err));
 
 app.use(express.json());
+// 클라이언트가 서버로 요청을 보내기 이전에, 사전 요청을 보냄.
+// 사전 요청은 CORS Preflight Reqeust 라고 하며, OPTIONS 메서드로 사전 요청을 보내고,
+// 이 요청은 서버가 특정 HTTP 메서드(POST, UPDATE 등)를 허용하는지 확인함
+// 이 요청에 적절히 응답해야 클라이언트가 실제 요청을 보내기 때문에,
+// CORS 미들웨어를 추가하여 반드시 이 요청을 처리해줘야함.
+app.use(cors());
 
 // 테스트 시에는 3000, 4000 등 임시 포트 사용
 // 배포 시에는 80(HTTP), 또는 443(HTTPS) 포트 사용
