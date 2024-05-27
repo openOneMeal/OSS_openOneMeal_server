@@ -16,12 +16,15 @@ mongoose.connect(dbUri)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
+// express.json() 미들웨어를 통해 JSON 형식의 요청 본문이 알아서 파싱됨
 app.use(express.json());
+// 이렇게 사용하면 CORS의 어떤 Header, 어떤 Method, 어떤 Origin 에 대해서도 접근을 허용한다.
 app.use(cors());
+// 모든 경로에 대하여 위와 같은 옵션을 적용한다.
 app.options('*', cors());
 
-// 테스트 시에는 3000, 4000 등 임시 포트 사용
-// 배포 시에는 80(HTTP), 또는 443(HTTPS) 포트 사용
+// 하드 코딩된 PORT 번호에서 Heroku에서 호스팅할 때 사용하는 PORT 번호로 변경함.
+// 이는 Heroku의 환경 변수에 등록되어 있음
 app.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
@@ -60,9 +63,19 @@ app.post('/api/signin', async (req, res) => {
 // 계정 생성 처리
 app.post('/api/signup', async (req, res) => {
     const { name, gender, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
+        
+        const user = await Users.findOne({ email });
+        if (user) {
+            return res.status(409).json({status:409, message: '중복된 이메일'});
+        }
+
+        // bcrypt.hash 를 통해 전달받은 패스워드를 해시화함
+        // 두번째 매개인자인 숫자는 해시 레벨이며,
+        // 해시 레벨을 높일 수록 처리 속도는 느려지지만 그만큼 복잡한 해시화
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         await Users.create({
             name: name,
             gender: gender,
