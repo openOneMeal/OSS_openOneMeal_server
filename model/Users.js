@@ -19,11 +19,12 @@ const usersSchema = new Schema({
         type: String,
         // required: 누락 하면 안되는 필드
         required: true,
-        maxlength: 50
+        maxlength: 30,
     },
     password: {
         type: String,
         required: true,
+        maxlength: 60,
     },
     createdAt: {
         type: Date,
