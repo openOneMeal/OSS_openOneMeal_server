@@ -184,50 +184,53 @@ app.put('/api/match', async (req, res) => {
 // 채팅 처리
 const clients = {};
 
-io.on('connection', async (socket) => {
+io.on('connection', socket => {
+   try {
+        socket.on('register', async (email) => {
+            // email 로 사용자 검색
+            const user = await User.findOne({ email : email });
+            // { 사용자id : 사용자 socket } 객체를 저장
+            clients[user._id] = socket;
 
-    socket.on('register', async (email) => {
-        // email 로 사용자 검색
-        const user = await User.findOne({ email : email });
-        // { 사용자id : 사용자 socket } 객체를 저장
-        clients[user._id] = socket;
+            // 연결된 사용자도 소켓이 연결되어 있는 경우
+            if (clients[user?._matchId]) {
+                const matchSocket = clients[user._matchId];
 
-        // 연결된 사용자도 소켓이 연결되어 있는 경우
-        if (clients[user?._matchId]) {
-            const matchSocket = clients[user._matchId];
+                socket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
+                matchSocket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
 
-            socket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
-            matchSocket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
+                // sendMessage 이벤트를 받으면 Chat 에 저장하고 상대 소켓에 전송
+                socket.on('sendMessage', async (message) => {
+                    await Chat.create({
+                        message: message,
+                        sender: user._id,
+                    });
 
-            // sendMessage 이벤트를 받으면 Chat 에 저장하고 상대 소켓에 전송
-            socket.on('sendMessage', async (message) => {
-                await Chat.create({
-                    message: message,
-                    sender: user._id,
+                    matchSocket.emit('receiveMessage', message);
                 });
 
-                matchSocket.emit('receiveMessage', message);
-            });
+                matchSocket.on('sendMessage', async (message) => {
+                    await Chat.create({
+                        message: message,
+                        sender: user._matchId,
+                    });
 
-            matchSocket.on('sendMessage', async (message) => {
-                await Chat.create({
-                    message: message,
-                    sender: user._matchId,
+                    socket.emit('receiveMessage', message);
                 });
 
-                socket.emit('receiveMessage', message);
-            });
-
-        } else {
-            socket.emit('waitingForMatch', "상대방이 접속하면 채팅이 시작됩니다.");
-        }
-    }); 
-
-    socket.on('disconnect', () => {
-        for (let userId in clients)
-            if (clients[userId] === socket) {
-                delete clients[user._id];
-                break;
+            } else {
+                socket.emit('waitingForMatch', "상대방이 접속하면 채팅이 시작됩니다.");
             }
-    });
+        }); 
+
+        socket.on('disconnect', () => {
+            for (let userId in clients)
+                if (clients[userId] === socket) {
+                    delete clients[user._id];
+                    break;
+                }
+        });
+   } catch (error) {
+        console.error('연결 중 에러 발생:', error);
+   }
 });
