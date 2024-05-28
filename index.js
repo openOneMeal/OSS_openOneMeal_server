@@ -68,7 +68,7 @@ app.options('*', cors());
 
 // 하드 코딩된 PORT 번호에서 Heroku에서 호스팅할 때 사용하는 PORT 번호로 변경함.
 // 이는 Heroku의 환경 변수에 등록되어 있음
-app.listen(process.env.PORT, () => {
+server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
 
