@@ -25,7 +25,7 @@ socket.io
 서버를 위한 소켓 라이브러리
 */
 import http from 'http';
-import socketIo from 'socket.io';
+import { Server } from 'socket.io';
 
 
 /* DB 컬렉션에 접근할 때 사용할 스키마 */
@@ -49,7 +49,7 @@ socket.io 서버 인스턴스
 const app = express();
 const dbUri = process.env.MONGODB_URI;
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = new Server(server);
 
 
 mongoose.connect(dbUri)
