@@ -202,21 +202,30 @@ io.on('connection', socket => {
 
                 // sendMessage 이벤트를 받으면 Chat 에 저장하고 상대 소켓에 전송
                 socket.on('sendMessage', async (message) => {
-                    await Chat.create({
-                        message: message,
-                        sender: user._id,
-                    });
+                    try {
+                        await Chat.create({
+                            message: message,
+                            sender: user._id,
+                        });
+                    
 
-                    matchSocket.emit('receiveMessage', message);
+                        matchSocket.emit('receiveMessage', message);
+                    } catch (error) {
+                        console.error('sendMessage 도중 에러 발생', error);
+                    }
                 });
 
                 matchSocket.on('sendMessage', async (message) => {
-                    await Chat.create({
-                        message: message,
-                        sender: user._matchId,
-                    });
+                    try {
+                        await Chat.create({
+                            message: message,
+                            sender: user._matchId,
+                        });
 
-                    socket.emit('receiveMessage', message);
+                        socket.emit('receiveMessage', message);
+                    } catch (error) {
+                        console.error('sendMessage 도중 에러 발생', error);
+                    }
                 });
 
             } else {
