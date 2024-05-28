@@ -51,7 +51,7 @@ const dbUri = process.env.MONGODB_URI;
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: 'https://openonemeal.github.io',
         methods: ['GET', 'POST']
     }
 });
