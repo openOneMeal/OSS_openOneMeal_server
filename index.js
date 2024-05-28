@@ -158,11 +158,15 @@ app.put('/api/match', async (req, res) => {
         if (userCount <= 1) {
             console.log("usercount 계산 중 에러");
         }
-
-        // 개수 범위 내에서 랜덤한 인덱스 생성
-        const randomIndex = Math.floor(Math.random() * userCount);
-        // 랜덤한 인덱스에 해당하는 문서 조회
-        const randomUser = await Users.findOne().skip(randomIndex);
+        
+        let randomIndex;
+        let randomUser;
+        do {
+            // 개수 범위 내에서 랜덤한 인덱스 생성
+            randomIndex = Math.floor(Math.random() * userCount);
+            // 랜덤한 인덱스에 해당하는 문서 조회
+            randomUser = await Users.findOne().skip(randomIndex);
+        } while (randomUser?._matchId || (userCount % 2 === 0))
 
         user._matchId = randomUser._id;
         randomUser._matchId = user._id;
