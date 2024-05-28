@@ -154,12 +154,21 @@ app.put('/api/match', async (req, res) => {
             return;
         }
         try {
-            const randomUser = await Users.aggregate([
+            // aggregate 는 JavaScript 객체를 배열로 반환
+            const randomUserArray = await Users.aggregate([
                 // _matchId 필드가 존재하지 않는 도큐먼트만 매치
                 { $match: { _matchId: { $exists: false } } },
                 // 랜덤으로 한 명 선택
                 { $sample: { size: 1 } }
             ]);
+
+            if (randomUserArray.length === 0) {
+                res.status(500).send('매칭할 사람이 없어서 매칭 실패');
+                return;
+            }
+            
+            const randomUserId = randomUserArray[0]._id;
+            const randomUser = await Users.findById(randomUserId);
 
             user._matchId = randomUser._id;
             randomUser._matchId = user._id;
