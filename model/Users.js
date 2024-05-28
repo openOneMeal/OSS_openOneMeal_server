@@ -26,6 +26,10 @@ const usersSchema = new Schema({
         required: true,
         maxlength: 60,
     },
+    _matchId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Users',
+    },
     createdAt: {
         type: Date,
         default: () => Date.now(),
