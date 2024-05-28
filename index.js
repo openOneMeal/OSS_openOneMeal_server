@@ -188,7 +188,7 @@ io.on('connection', socket => {
    try {
         socket.on('register', async (email) => {
             // email 로 사용자 검색
-            const user = await User.findOne({ email : email });
+            const user = await Users.findOne({ email : email });
             // { 사용자id : 사용자 socket } 객체를 저장
             clients[user._id] = socket;
 
