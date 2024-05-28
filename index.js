@@ -154,20 +154,12 @@ app.put('/api/match', async (req, res) => {
             return;
         }
 
-        // 유저 개수 얻어오기
-        const userCount = await Users.countDocuments();
-        if (userCount <= 1) {
-            console.log("usercount 계산 중 에러");
-        }
-        
-        let randomIndex;
-        let randomUser;
-        do {
-            // 개수 범위 내에서 랜덤한 인덱스 생성
-            randomIndex = Math.floor(Math.random() * userCount);
-            // 랜덤한 인덱스에 해당하는 문서 조회
-            randomUser = await Users.findOne().skip(randomIndex);
-        } while (randomUser?._matchId || (userCount % 2 === 0))
+        const randomUser = await Users.aggregate([
+            // _matchId 필드가 존재하지 않는 도큐먼트만 매치
+            { $match: { _matchId: { $exists: false } } },
+            // 랜덤으로 한 명 선택
+            { $sample: { size: 1 } }
+        ]);
 
         user._matchId = randomUser._id;
         randomUser._matchId = user._id;
