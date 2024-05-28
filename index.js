@@ -59,7 +59,9 @@ mongoose.connect(dbUri)
 // express.json() 미들웨어를 통해 JSON 형식의 요청 본문이 알아서 파싱됨
 app.use(express.json());
 // 이렇게 사용하면 CORS의 어떤 Header, 어떤 Method, 어떤 Origin 에 대해서도 접근을 허용한다.
-app.use(cors());
+app.use(cors({
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 // 모든 경로에 대하여 위와 같은 옵션을 적용한다.
 app.options('*', cors());
 
@@ -142,6 +144,10 @@ app.put('/api/match', async (req, res) => {
 
         // 유저 개수 얻어오기
         const userCount = await Users.countDocuments();
+        if (userCount <= 1) {
+            console.log("usercount 계산 중 에러");
+        }
+
         // 개수 범위 내에서 랜덤한 인덱스 생성
         const randomIndex = Math.floor(Math.random() * userCount);
         // 랜덤한 인덱스에 해당하는 문서 조회
