@@ -51,8 +51,10 @@ const dbUri = process.env.MONGODB_URI;
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        methods: ["*"],
+        origin: "https://openonemeal.github.io",
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type"],
+        credentials: true,
     }
 });
 
@@ -65,7 +67,6 @@ mongoose.connect(dbUri)
 app.use(express.json());
 // 이렇게 사용하면 CORS의 어떤 Header, 어떤 Method, 어떤 Origin 에 대해서도 접근을 허용한다.
 app.use(cors({
-    origin: "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 // 모든 경로에 대하여 위와 같은 옵션을 적용한다.
