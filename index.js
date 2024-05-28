@@ -142,6 +142,11 @@ app.put('/api/match', async (req, res) => {
         // 요청을 보낸 유저 조회
         const user = await Users.findOne({ email: email });
 
+        if (user._matchId) {
+            res.status(200).send('이미 매칭됨');
+            return;
+        }
+
         // 유저 개수 얻어오기
         const userCount = await Users.countDocuments();
         if (userCount <= 1) {
@@ -154,7 +159,9 @@ app.put('/api/match', async (req, res) => {
         const randomUser = await Users.findOne().skip(randomIndex);
 
         user._matchId = randomUser._id;
+        randomUser._matchId = user._id;
         await user.save();
+        await randomUser.save();
 
         res.status(200).send('매칭 완료');
     } catch (error) {
