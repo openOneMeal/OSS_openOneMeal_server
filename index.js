@@ -153,18 +153,22 @@ app.put('/api/match', async (req, res) => {
             res.status(204).send('이미 매칭됨');
             return;
         }
+        try {
+            const randomUser = await Users.aggregate([
+                // _matchId 필드가 존재하지 않는 도큐먼트만 매치
+                { $match: { _matchId: { $exists: false } } },
+                // 랜덤으로 한 명 선택
+                { $sample: { size: 1 } }
+            ]);
 
-        const randomUser = await Users.aggregate([
-            // _matchId 필드가 존재하지 않는 도큐먼트만 매치
-            { $match: { _matchId: { $exists: false } } },
-            // 랜덤으로 한 명 선택
-            { $sample: { size: 1 } }
-        ]);
-
-        user._matchId = randomUser._id;
-        randomUser._matchId = user._id;
-        await user.save();
-        await randomUser.save();
+            user._matchId = randomUser._id;
+            randomUser._matchId = user._id;
+            await user.save();
+            await randomUser.save();
+        
+        } catch (error) {
+            console.log("랜덤 유저 추출 중에 에러 발생", error);
+        }
 
         res.status(200).send('매칭 완료');
     } catch (error) {
