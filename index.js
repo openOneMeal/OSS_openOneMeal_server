@@ -51,8 +51,8 @@ const dbUri = process.env.MONGODB_URI;
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'https://openonemeal.github.io',
-        methods: ['GET', 'POST']
+        origin: "*",
+        methods: ["*"],
     }
 });
 
@@ -65,6 +65,7 @@ mongoose.connect(dbUri)
 app.use(express.json());
 // 이렇게 사용하면 CORS의 어떤 Header, 어떤 Method, 어떤 Origin 에 대해서도 접근을 허용한다.
 app.use(cors({
+    origin: "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 // 모든 경로에 대하여 위와 같은 옵션을 적용한다.
@@ -148,7 +149,7 @@ app.put('/api/match', async (req, res) => {
         const user = await Users.findOne({ email: email });
 
         if (user._matchId) {
-            res.status(200).send('이미 매칭됨');
+            res.status(204).send('이미 매칭됨');
             return;
         }
 
@@ -179,52 +180,49 @@ app.put('/api/match', async (req, res) => {
 const clients = {};
 
 io.on('connection', async (socket) => {
-    try {   
-        // socket 과 함께 전송된 이메일 추출
-        const email = decodeURIComponent(socket.handshake.query.email);
+
+    socket.on('register', async (email) => {
         // email 로 사용자 검색
         const user = await User.findOne({ email : email });
         // { 사용자id : 사용자 socket } 객체를 저장
         clients[user._id] = socket;
 
         // 연결된 사용자도 소켓이 연결되어 있는 경우
-        if (clients[user._matchId]) {
+        if (clients[user?._matchId]) {
             const matchSocket = clients[user._matchId];
 
-            socket.emit('matchConnected', "연결되었습니다.");
-            matchSocket.emit('matchConnected', "연결되었습니다.");
+            socket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
+            matchSocket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
 
             // sendMessage 이벤트를 받으면 Chat 에 저장하고 상대 소켓에 전송
             socket.on('sendMessage', async (message) => {
                 await Chat.create({
                     message: message,
                     sender: user._id,
-                })
+                });
 
                 matchSocket.emit('receiveMessage', message);
-            })
+            });
 
             matchSocket.on('sendMessage', async (message) => {
                 await Chat.create({
                     message: message,
                     sender: user._matchId,
-                })
+                });
 
                 socket.emit('receiveMessage', message);
-            })
+            });
+
         } else {
-            socket.emit('waitingForMatch', "연결 중입니다.");
+            socket.emit('waitingForMatch', "상대방이 접속하면 채팅이 시작됩니다.");
         }
+    }); 
 
-        socket.on('disconnect', () => {
-            delete clients[user._id];
-        });
-
-    } catch (error) {
-        console.error('연결 중 에러 발생', error);
-        if (user._id in clients) {
-            delete clients[user._id];
-        }
-        socket.disconnect();
-    }
+    socket.on('disconnect', () => {
+        for (let userId in clients)
+            if (clients[userId] === socket) {
+                delete clients[user._id];
+                break;
+            }
+    });
 });
