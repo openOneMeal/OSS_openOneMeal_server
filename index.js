@@ -181,7 +181,7 @@ const clients = {};
 io.on('connection', async (socket) => {
     try {   
         // socket 과 함께 전송된 이메일 추출
-        const email = socket.handshake.query.email;
+        const email = decodeURIComponent(socket.handshake.query.email);
         // email 로 사용자 검색
         const user = await User.findOne({ email : email });
         // { 사용자id : 사용자 socket } 객체를 저장
