@@ -219,9 +219,9 @@ app.post('/api/checkmatch', async (req, res) => {
     const { userId } = req.body;
 
     try {
-        const matchState = await Users.findOne({ _id: userId }, { _id: 0, matchState: 1 });
-        console.log("matchState: ", matchState);
-        res.status(200).json({ matchState: matchState });
+        const user = await Users.findOne({ _id: userId });
+        console.log("matchState: ", user.matchState);
+        res.status(200).json({ matchState: user.matchState });
 
     } catch (error) {
         console.error('checkmatch POST 처리 도중 에러 발생', error);
@@ -367,9 +367,9 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
             await chatSession.save();
 
             // 연결된 클라이언트 목록에서 제거
-            for (let userId in clients) {
-                if (clients[userId] === socket) {
-                    delete clients[userId];
+            for (let matchUserId in clients) {
+                if (clients[matchUserId] === matchSocket) {
+                    delete clients[matchUserId];
                     break;
                 }
             }
@@ -400,9 +400,6 @@ io.on('connection', socket => {
             const chatLogs = await ChatLogs.where("chatSessionId").equals(chatSession._id).select("message sender");
             socket.emit('loadMessages', chatLogs);
 
-            // sender 설정
-            const sender = userName;
-
             // 한 명이 오프라인이면 DB에만 저장
             if (chatSession.usersOnline !== 2) {
                 offlineListener(socket, chatSession, clients);
@@ -412,8 +409,8 @@ io.on('connection', socket => {
             // 앞선 조건 검사에서 온라인이 2명이 아닌 상태를 검사했으므로,
             // 이 코드를 타게되면 무조건 둘 다 온라인인 상태
             // matchSocket 불러오기
-            const matchUserId = await ChatSessions.findOne({ userIds: {$ne: userId }}, "userIds");
-            const matchSocket = clients[matchUserId];
+            const matchUser = await ChatSessions.findOne({ userIds: {$ne: userId }});
+            const matchSocket = clients[matchUser.userIds[0]];
 
             onlineListener(socket, matchSocket, chatSession, clients);
         });
