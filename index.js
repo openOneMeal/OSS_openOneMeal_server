@@ -216,8 +216,9 @@ cron.schedule('0 0 * * *', async () => {
 });
 
 app.post('/api/checkmatch', async (req, res) => {
+    const { userId } = req.body;
+    
     try {
-        const { userId } = req.body;
         const matchState = await Users.findOne({ _id: userId }, "matchState");
         if (user) {
             res.status(200).json({ matchState: matchState });
