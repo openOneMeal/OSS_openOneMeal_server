@@ -215,7 +215,7 @@ cron.schedule('0 0 * * *', async () => {
     }
 });
 
-app.post('/api/checkmatch'), async (req, res) => {
+app.post('/api/checkmatch', async (req, res) => {
     try {
         const { userId } = req.body;
         const matchState = await Users.findOne({ _id: userId }, "matchState");
@@ -224,7 +224,7 @@ app.post('/api/checkmatch'), async (req, res) => {
     } catch (error) {
         console.error('matchState GET 도중 에러 발생', error);
     }
-}
+});
 
 app.put('/api/choosematch', async (req, res) => {
     const { userId, matchState } = req.body;
