@@ -1,3 +1,5 @@
+// 회원 가입 시 매칭도 구현해야함
+
 /* 서버를 위한 라이브러리
 cors
 클라이언트가 서버로 요청을 보내기 이전에, 사전 요청을 보냄.
@@ -251,13 +253,17 @@ app.put('/api/choosematch', async (req, res) => {
                 await user.save();
                 await matchUser.save();
 
+                console.log("양쪽 매칭됨");
                 res.json({ matchState: "matched" });
+                return;
             }
 
+            console.log("한쪽 pending");
             res.json({ matchState: "pending" });
             return;
         }
 
+        console.log("매칭 거절됨");
         user.matchState = "notMatched";
         matchUser.matchState = "notMatched";
         await user.save();
