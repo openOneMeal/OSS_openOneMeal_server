@@ -286,6 +286,7 @@ const offlineListener = (socket, chatSession, clients) => {
         try {
             // 전송하는 메시지 DB에만 업데이트
             await ChatLogs.create({
+                chatSessionId: chatSession._id,
                 sender: message.sender,
                 message: message.message,
             })
