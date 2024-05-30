@@ -321,6 +321,7 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
     socket.on('sendMessage', async (message) => {
         try {
             await ChatLogs.create({
+                chatSessionId: chatSession._id,
                 sender: message.sender,
                 message: message.message,
             });
@@ -335,6 +336,7 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
     matchSocket.on('sendMessage', async (message) => {
         try {
             await ChatLogs.create({
+                chatSessionId: chatSession._id,
                 sender: message.sender,
                 message: message.message,
             });
