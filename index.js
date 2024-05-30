@@ -38,7 +38,7 @@ import { Server } from 'socket.io';
 
 /* DB 컬렉션에 접근할 때 사용할 스키마 */
 import Users from './model/Users.js';
-import ChatSessions from './model/ChatSessions.js';
+import ChatSessions from './model/ChatSession.js';
 import ChatLogs from './model/ChatLogs.js';
 import { exec } from 'child_process';
 
