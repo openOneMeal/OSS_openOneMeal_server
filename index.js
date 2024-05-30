@@ -401,7 +401,7 @@ io.on('connection', socket => {
             console.log("clients[userId]: ", clients[userId]);
 
             // userId 로 자신의 채팅 세션 검색
-            const chatSession = await ChatSessions.findOne({ userIds: {$in : [userId]}});
+            const chatSession = await ChatSessions.findOne({ userIds: userId });
             console.log("chatSession: ", chatSession);
             // 유저의 온라인을 업데이트
             chatSession.userOnline += 1;
@@ -423,11 +423,8 @@ io.on('connection', socket => {
             // 앞선 조건 검사에서 온라인이 2명이 아닌 상태를 검사했으므로,
             // 이 코드를 타게되면 무조건 둘 다 온라인인 상태
             // matchSocket 불러오기
-            const matchUser = await ChatSessions.findOne({ userIds: {$ne: userId }});
-            console.log("matchUser: ", matchUser);
-            const matchSocket = clients[matchUser.userIds[0]];
-            console.log("clients[matchUser.userIds[0]]: ", clients[matchUser.userIdsp[0]]);
-            console.log("matchSocket: ", matchSocket);
+            const matchUserId = chatSession.userIds.find(id => id.toString() !== userId.toString());
+            const matchSocket = clients[matchUserId];
 
             console.log("online listener 호출됨.");
             onlineListener(socket, matchSocket, chatSession, clients);
