@@ -217,14 +217,10 @@ cron.schedule('0 0 * * *', async () => {
 
 app.post('/api/checkmatch', async (req, res) => {
     const { userId } = req.body;
-    
+
     try {
         const matchState = await Users.findOne({ _id: userId }, "matchState");
-        if (user) {
-            res.status(200).json({ matchState: matchState });
-        } else {
-            res.status(404).send();
-        }
+        res.status(200).json({ matchState: matchState });
 
     } catch (error) {
         console.error('checkmatch POST 처리 도중 에러 발생', error);
