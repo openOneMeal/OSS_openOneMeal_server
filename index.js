@@ -298,7 +298,7 @@ const offlineListener = (socket, chatSession, clients) => {
     socket.on('disconnect', async () => {
         try {
             // 온라인 상태 제거
-            chatSession.usersOnline -= 1;
+            chatSession.userOnline -= 1;
             await chatSession.save();
 
             // 연결된 클라이언트 목록에서 제거
@@ -351,7 +351,7 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
     socket.on('disconnect', async () => {
         try {
             // 온라인 상태 제거
-            chatSession.usersOnline -= 1;
+            chatSession.userOnline -= 1;
             await chatSession.save();
 
             // 연결된 클라이언트 목록에서 제거
@@ -372,7 +372,7 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
     matchSocket.on('disconnect', async () => {
         try {
             // 온라인 상태 제거
-            chatSession.usersOnline -= 1;
+            chatSession.userOnline -= 1;
             await chatSession.save();
 
             // 연결된 클라이언트 목록에서 제거
@@ -414,7 +414,7 @@ io.on('connection', socket => {
             socket.emit('loadMessages', chatLogs);
 
             // 한 명이 오프라인이면 DB에만 저장
-            if (chatSession.usersOnline !== 2) {
+            if (chatSession.userOnline !== 2) {
                 console.log("offline listener 호출됨.");
                 offlineListener(socket, chatSession, clients);
                 return;
