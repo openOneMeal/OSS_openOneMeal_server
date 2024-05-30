@@ -254,6 +254,7 @@ app.put('/api/choosematch', async (req, res) => {
                 res.json({ matchState: "matched" });
             }
 
+            res.json({ matchState: "pending" });
             return;
         }
 
