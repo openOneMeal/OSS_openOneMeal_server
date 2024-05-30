@@ -219,7 +219,7 @@ app.post('/api/checkmatch', async (req, res) => {
     const { userId } = req.body;
 
     try {
-        const matchState = await Users.findOne({ _id: userId }, "matchState");
+        const matchState = await Users.findOne({ _id: userId }, { _id: 0, matchState: 1 });
         console.log("matchState: ", matchState);
         res.status(200).json({ matchState: matchState });
 
