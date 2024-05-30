@@ -269,7 +269,6 @@ app.put('/api/choosematch', async (req, res) => {
 });
 
 
-
 // 채팅 처리
 const clients = {};
 
@@ -386,23 +385,28 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
 io.on('connection', socket => {
    try {
         socket.on('register', async (data) => {
-            const { userId, userName } = data;
+            const { userId } = data;
 
             // { 사용자id : 사용자 socket } 연결된 클라이언트 목록에 소켓 등록
             clients[userId] = socket;
+            console.log("clients[userId]: ", clients[userId]);
 
             // userId 로 자신의 채팅 세션 검색
             const chatSession = await ChatSessions.findOne({ userIds: userId });
+            console.log("chatSession: ", chatSession);
             // 유저의 온라인을 업데이트
             chatSession.usersOnline += 1;
+            console.log("chatSession.userOnline: ", chatSession.userOnline);
             await chatSession.save();
 
             // 채팅 로그 불러오기
             const chatLogs = await ChatLogs.where("chatSessionId").equals(chatSession._id).select("message sender");
+            console.log("chatLogs: ", chatLogs);
             socket.emit('loadMessages', chatLogs);
 
             // 한 명이 오프라인이면 DB에만 저장
             if (chatSession.usersOnline !== 2) {
+                console.log("offline listener 호출됨.");
                 offlineListener(socket, chatSession, clients);
                 return;
             }
@@ -411,8 +415,12 @@ io.on('connection', socket => {
             // 이 코드를 타게되면 무조건 둘 다 온라인인 상태
             // matchSocket 불러오기
             const matchUser = await ChatSessions.findOne({ userIds: {$ne: userId }});
+            console.log("matchUser: ", matchUser);
             const matchSocket = clients[matchUser.userIds[0]];
+            console.log("clients[matchUser.userIds[0]]: ", clients[matchUser.userIdsp[0]]);
+            console.log("matchSocket: ", matchSocket);
 
+            console.log("online listener 호출됨.");
             onlineListener(socket, matchSocket, chatSession, clients);
         });
     } catch (error) {
