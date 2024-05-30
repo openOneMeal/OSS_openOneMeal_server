@@ -219,10 +219,15 @@ app.post('/api/checkmatch', async (req, res) => {
     try {
         const { userId } = req.body;
         const matchState = await Users.findOne({ _id: userId }, "matchState");
-        res.json({ matchState: matchState });
+        if (user) {
+            res.status(200).json({ matchState: matchState });
+        } else {
+            res.status(404).send();
+        }
 
     } catch (error) {
-        console.error('matchState GET 도중 에러 발생', error);
+        console.error('checkmatch POST 처리 도중 에러 발생', error);
+        res.status(500).send();
     }
 });
 
