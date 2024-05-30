@@ -401,7 +401,7 @@ io.on('connection', socket => {
             const chatSession = await ChatSessions.findOne({ userIds: {$in : [userId]}});
             console.log("chatSession: ", chatSession);
             // 유저의 온라인을 업데이트
-            chatSession.usersOnline += 1;
+            chatSession.userOnline += 1;
             await chatSession.save();
             console.log("chatSession.userOnline: ", chatSession.userOnline);
 
