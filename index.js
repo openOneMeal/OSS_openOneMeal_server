@@ -398,15 +398,15 @@ io.on('connection', socket => {
             console.log("clients[userId]: ", clients[userId]);
 
             // userId 로 자신의 채팅 세션 검색
-            const chatSession = await ChatSessions.findOne({ userIds: userId });
+            const chatSession = await ChatSessions.findOne({ userIds: {$in : [userId]}});
             console.log("chatSession: ", chatSession);
             // 유저의 온라인을 업데이트
             chatSession.usersOnline += 1;
-            console.log("chatSession.userOnline: ", chatSession.userOnline);
             await chatSession.save();
+            console.log("chatSession.userOnline: ", chatSession.userOnline);
 
             // 채팅 로그 불러오기
-            const chatLogs = await ChatLogs.where("chatSessionId").equals(chatSession._id).select("message sender");
+            const chatLogs = await ChatLogs.find({ chatSessionId: chatSession._id }, { _id: 0, sender: 1, message: 1});
             console.log("chatLogs: ", chatLogs);
             socket.emit('loadMessages', chatLogs);
 
