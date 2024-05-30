@@ -8,11 +8,18 @@ CORS 미들웨어를 추가하여 반드시 이 요청을 처리해줘야함.
 
 bcryptjs
 비밀번호를 안전하게 해시하고 검증하는 기능을 제공하는 라이브러리
+
+node-cron
+크론 작업은 유닉스 계열 운영체제에서 일정한 시간 간격으로 명령어나 스크립트를 실행하도록 설정하는 작업.
+node-cron 은 Node.js 환경에서 정기적인 크론 작업 스케줄링을 쉽게 설정할 수 있는 라이브러리
+매일 12시에 매칭되지 않은 유저들을 매칭시켜주는 작업을 시행하기 위해 사용
 */
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import cron from 'node-cron';
+
 
 
 /* 채팅을 위한 라이브러리
@@ -28,9 +35,13 @@ import http from 'http';
 import { Server } from 'socket.io';
 
 
+
 /* DB 컬렉션에 접근할 때 사용할 스키마 */
 import Users from './model/Users.js';
-import Chat from './model/Chat.js';
+import ChatSessions from './model/ChatSessions.js';
+import ChatLogs from './model/ChatLogs.js';
+import { exec } from 'child_process';
+
 
 
 /* 사용할 객체
@@ -59,6 +70,7 @@ const io = new Server(server, {
 });
 
 
+
 mongoose.connect(dbUri)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
@@ -73,11 +85,13 @@ app.use(cors({
 app.options('*', cors());
 
 
+
 // 하드 코딩된 PORT 번호에서 Heroku에서 호스팅할 때 사용하는 PORT 번호로 변경함.
 // 이는 Heroku의 환경 변수에 등록되어 있음
 server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
+
 
 
 // 로그인 처리
@@ -88,7 +102,8 @@ app.post('/api/signin', async (req, res) => {
         const user = await Users.findOne({ email });
 
         if (!user) {
-            return res.status(401).json({status: 401, message: '이메일 혹은 패스워드가 일치하지 않습니다.'});
+            // 아이디가 DB에 존재하지 않음
+            return res.status(401).send();
         }
 
         // bcrypt.compare() 함수는 입력받은 비밀번호와 DB에 저장된 해시된 비밀번호를 비교
@@ -102,14 +117,16 @@ app.post('/api/signin', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({status: 401, message: '이메일 혹은 패스워드가 일치하지 않습니다.'});
+            // 비밀번호가 일치하지 않음
+            return res.status(401).send();
         }
 
-        return res.status(200).json({ status: 200, message: '로그인 성공' });
+        return res.status(200).json({ userId: user._id, userName: user.name });
     } catch (err) {
-        return res.status(500).json({ status: 500, message: 'Server error'});
+        return res.status(500).send();
     }
 });
+
 
 
 // 계정 생성 처리
@@ -141,111 +158,263 @@ app.post('/api/signup', async (req, res) => {
     }
 });
 
-// 간단하게 매칭 처리
-app.put('/api/match', async (req, res) => {
-    const { email } = req.body;
 
+
+// 매칭 처리 및 매칭 확인
+// '0 0 * * *' 은 오전 12시에 작업을 실행하도록 설정하는 cron 표현식
+// 오전 12시에 콜백 함수를 실행하며, 이는 오전 12시에 매칭되지 않은 사람을 매칭
+cron.schedule('0 0 * * *', async () => {
     try {
-        // 요청을 보낸 유저 조회
-        const user = await Users.findOne({ email: email });
+        // 매칭해야할 유저 documents 를 전부 얻어옴.
+        const usersToMatch = await Users.find({ matchState: {$ne: matched} })
+        const usersCount = usersToMatch.length;
 
-        if (user._matchId) {
-            res.status(204).send('이미 매칭됨');
-            return;
+        // 유저의 개수 크기의 배열 생성
+        let arrayForShuffle = new Array(usersCount);
+        // 배열의 인덱스에 각 인덱스 넘버를 할당
+        for (let i = 0; i < usersCount; ++i) {
+            arrayForShuffle[i] = i;
         }
-        try {
-            // aggregate 는 JavaScript 객체를 배열로 반환
-            const randomUserArray = await Users.aggregate([
-                // _matchId 필드가 존재하지 않는 도큐먼트만 매치
-                { $match: { _matchId: { $exists: false } } },
-                // 랜덤으로 한 명 선택
-                { $sample: { size: 1 } }
-            ]);
+        // 배열을 랜덤하게 섞음 (Fisher-Yates Shuffle 알고리즘이라고 함..)
+        for (let i = usersCount - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arrayForShuffle[i], arrayForShuffle[j]] = [arrayForShuffle[j], arrayForShuffle[i]];
+        }
+        // 두개씩 짝지어서 차례대로 채팅 세션을 생성하고 matchState 를 choose 로 변경
+        for (let i = 0; i < usersCount; i += 2) {
+            // usersCount 가 홀수라면 1명은 매칭이 그날 보류됨.
+            const userIds = [
+                usersToMatch[arrayForShuffle[i]],
+                usersToMatch[arrayForShuffle[i + 1]]
+            ];
 
-            if (randomUserArray.length === 0) {
-                res.status(500).send('매칭할 사람이 없어서 매칭 실패');
+            await ChatSessions.create({ userIds: userIds });
+
+            // 매칭되면 matched 로 상태를 바꾸고 업데이트
+            userToMatch[arrayForShuffle][i].matchState = 'choose';
+            userToMatch[arrayForShuffle][i + 1].matchState = 'choose';
+            await userToMatch[arrayForShuffle][i].save();
+            await userToMatch[arrayForShuffle][i + 1].save();
+        }
+
+        // 서버 재시작
+        // 클라이언트는 서버 재시작 시 소켓 재연결 요청을 알아서 보내기 때문에 따로 알리지 않아도 될듯.
+        exec('node index.js', (error, stdout ,stderr) => {
+            if (error) {
+                console.error('Error restarting server: ${error}');
                 return;
             }
-            
-            const randomUserId = randomUserArray[0]._id;
-            const randomUser = await Users.findById(randomUserId);
+            console.log('stdout: ${stdout}');
+            console.error('stderr: ${stderr}');
+        });
 
-            user._matchId = randomUser._id;
-            randomUser._matchId = user._id;
-            await user.save();
-            await randomUser.save();
-        
-        } catch (error) {
-            console.log("랜덤 유저 추출 중에 에러 발생", error);
+        process.exit(0);
+
+    } catch (error) {
+        console.error("매칭 중 에러 발생", error);
+    }
+});
+
+app.get('/api/checkmatch'), async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const matchState = await Users.findOne({ _id: userId }, "matchState");
+        res.json({ matchState: matchState });
+
+    } catch (error) {
+        console.error('matchState GET 도중 에러 발생', error);
+    }
+}
+
+app.put('/api/choosematch', async (req, res) => {
+    const { userId, matchState } = req.body;
+
+    try {
+        const user = await Users.findOne({ _id: userId });
+        user.matchState = matchState;
+        await user.save();
+
+        // 매칭된 유저 조회
+        const chatSession = await ChatSessions.findOne({ userIds: userId });
+        const matchUserId = chatSession.userIds.find(id => id.toString() !== userId.toString());
+        const matchUser = await Users.findOne({ _id: matchUserId });
+
+        // 수락하여 pending 상태가 됐으면 상대 유저의 상태도 체크
+        if (matchState === "pending") {
+            // 매칭된 상태도 pending 이면 둘이 매칭됨
+            if (matchUser.matchState === "pending") {
+                user.matchState = "matched";
+                matchUser.matchState = "matched";
+                await user.save();
+                await matchUser.save();
+
+                res.json({ matchState: "matched" });
+            }
+
+            return;
         }
 
-        res.status(200).send('매칭 완료');
+        user.matchState = "notMatched";
+        matchUser.matchState = "notMatched";
+        await user.save();
+        await matchUser.save();
+        res.json({ matchState: "notMatched"});
     } catch (error) {
         res.status(500).send('모종의 이유로 오류가 발생하여 매칭 실패');
     }
 });
 
 
+
 // 채팅 처리
 const clients = {};
+
+// 한 명은 오프라인일 때 리스너
+const offlineListener = (socket, chatSession, clients) => {
+    socket.removeAllListeners();
+
+    socket.on('sendMessage', async (message) => {
+        try {
+            // 전송하는 메시지 DB에만 업데이트
+            await ChatLogs.create({
+                sender: message.sender,
+                message: message.message,
+            })
+        } catch (error) {
+            console.error('Single sendMessage error', error);
+        }
+    })
+
+    socket.on('disconnect', async () => {
+        try {
+            // 온라인 상태 제거
+            chatSession.usersOnline -= 1;
+            await chatSession.save();
+
+            // 연결된 클라이언트 목록에서 제거
+            for (let userId in clients) {
+                if (clients[userId] === socket) {
+                    delete clients[userId];
+                    break;
+                }
+            }
+
+        } catch (error) {
+            console.error('Disconnect error', error);
+        }
+    });
+}
+
+// 둘 다 온라인일 때 리스너
+const onlineListener = (socket, matchSocket, chatSession, clients) => {
+    matchSocket.removeAllListeners();
+    
+    socket.on('sendMessage', async (message) => {
+        try {
+            await ChatLogs.create({
+                sender: message.sender,
+                message: message.message,
+            });
+        
+
+            matchSocket.emit('receiveMessage', message);
+        } catch (error) {
+            console.error('sendMessage 도중 에러 발생', error);
+        }
+    });
+
+    matchSocket.on('sendMessage', async (message) => {
+        try {
+            await ChatLogs.create({
+                sender: message.sender,
+                message: message.message,
+            });
+
+            socket.emit('receiveMessage', message);
+        } catch (error) {
+            console.error('sendMessage 도중 에러 발생', error);
+        }
+    });
+
+    socket.on('disconnect', async () => {
+        try {
+            // 온라인 상태 제거
+            chatSession.usersOnline -= 1;
+            await chatSession.save();
+
+            // 연결된 클라이언트 목록에서 제거
+            for (let userId in clients) {
+                if (clients[userId] === socket) {
+                    delete clients[userId];
+                    break;
+                }
+            }
+
+            // 소켓이 연결 해제되면 matchSocket 은 offlineListener 를 실행하도록 설정
+            offlineListener(matchSocket, matchSender, chatSession, clients);
+        } catch (error) {
+            console.error('Disconnect error', error);
+        }
+    });
+
+    matchSocket.on('disconnect', async () => {
+        try {
+            // 온라인 상태 제거
+            chatSession.usersOnline -= 1;
+            await chatSession.save();
+
+            // 연결된 클라이언트 목록에서 제거
+            for (let userId in clients) {
+                if (clients[userId] === socket) {
+                    delete clients[userId];
+                    break;
+                }
+            }
+
+            // matchSocket이 연결 해제되면 소켓은 offlineListener 를 실행하도록 설정
+            offlineListener(socket, sender, chatSession, clients);
+        } catch (error) {
+            console.error('Disconnect error', error);
+        }
+    });
+}
 
 io.on('connection', socket => {
    try {
         socket.on('register', async (data) => {
-            const { userEmail } = data;
-            // email 로 사용자 검색
-            const user = await Users.findOne({ email : userEmail });
-            // { 사용자id : 사용자 socket } 객체를 저장
-            clients[user._id] = socket;
+            const { userId, userName } = data;
 
-            // 연결된 사용자도 소켓이 연결되어 있는 경우
-            if (clients[user?._matchId]) {
-                const matchSocket = clients[user._matchId];
+            // { 사용자id : 사용자 socket } 연결된 클라이언트 목록에 소켓 등록
+            clients[userId] = socket;
 
-                socket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
-                matchSocket.emit('matchConnected', "상대방이 접속하였습니다. 채팅을 입력하세요.");
+            // userId 로 자신의 채팅 세션 검색
+            const chatSession = await ChatSessions.findOne({ userIds: userId });
+            // 유저의 온라인을 업데이트
+            chatSession.usersOnline += 1;
+            await chatSession.save();
 
-                // sendMessage 이벤트를 받으면 Chat 에 저장하고 상대 소켓에 전송
-                socket.on('sendMessage', async (message) => {
-                    try {
-                        await Chat.create({
-                            message: message,
-                            sender: user._id,
-                        });
-                    
+            // 채팅 로그 불러오기
+            const chatLogs = await ChatLogs.where("chatSessionId").equals(chatSession._id).select("message sender");
+            socket.emit('loadMessages', chatLogs);
 
-                        matchSocket.emit('receiveMessage', message);
-                    } catch (error) {
-                        console.error('sendMessage 도중 에러 발생', error);
-                    }
-                });
+            // sender 설정
+            const sender = userName;
 
-                matchSocket.on('sendMessage', async (message) => {
-                    try {
-                        await Chat.create({
-                            message: message,
-                            sender: user._matchId,
-                        });
-
-                        socket.emit('receiveMessage', message);
-                    } catch (error) {
-                        console.error('sendMessage 도중 에러 발생', error);
-                    }
-                });
-
-            } else {
-                socket.emit('waitingForMatch', "상대방이 접속하면 채팅이 시작됩니다.");
+            // 한 명이 오프라인이면 DB에만 저장
+            if (chatSession.usersOnline !== 2) {
+                offlineListener(socket, chatSession, clients);
+                return;
             }
-        }); 
 
-        socket.on('disconnect', () => {
-            for (let userId in clients)
-                if (clients[userId] === socket) {
-                    delete clients[user._id];
-                    break;
-                }
+            // 앞선 조건 검사에서 온라인이 2명이 아닌 상태를 검사했으므로,
+            // 이 코드를 타게되면 무조건 둘 다 온라인인 상태
+            // matchSocket 불러오기
+            const matchUserId = await ChatSessions.findOne({ userIds: {$ne: userId }}, "userIds");
+            const matchSocket = clients[matchUserId];
+
+            onlineListener(socket, matchSocket, chatSession, clients);
         });
-   } catch (error) {
+    } catch (error) {
         console.error('연결 중 에러 발생:', error);
-   }
+    }
 });

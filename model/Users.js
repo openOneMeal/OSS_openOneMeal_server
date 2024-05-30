@@ -26,17 +26,22 @@ const usersSchema = new Schema({
         required: true,
         maxlength: 60,
     },
-    _matchId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Users',
-    },
     createdAt: {
         type: Date,
         default: () => Date.now(),
         // immutable: 첫 할당 이후 수정 불가능한 필드
         immutable: true,
     },
-    updatedAt: Date,
+    matchState: {
+        type: String,
+        // enum: 허용 가능한 값을 제한
+        enum: ['choose', 'notMatched', 'matched', 'pending'],
+        default: 'notMatched',
+    },
+    chatSessionId: {
+        type: Schema.Types.ObjectId,
+        ref: 'ChatSessions',
+    },
 });
 
 // Middleware

@@ -58,3 +58,52 @@ console.log(studentWhere);
 // where 에 select 를 추가해서 projection 을 설정할 수 있음
 const studentWhere2 = await User.where("email").equals("test@test.com").select("_id email");
 console.log(studentWhere2);*/
+
+/* populate: 현재 Documents 에서 참조한 다른 컬렉션의 Document를 자동으로 조회하여
+             참조한 필드에 그 Document 를 불러옴.
+
+// Student 스키마
+const StudentSchema = new Schema({
+    name: String,
+    height: Number,
+});
+
+// Class 스키마
+const ClassSchema = new Schema({
+    classNo: Number,
+    relatedIds: [{ type: Schema.Types.ObjectId, ref: 'Student' }],
+});
+
+// populate 로 classDoc 객체를 가져오기
+Class.findById(Class.classNo).populate('relatedIds').exec((err, classDoc) => {
+    if (err) return console.error(err);
+    
+    // relatedIds에서 첫 번째 student ID 가져오기
+    const studentId = classDoc.relatedIds[0];
+});
+
+왜냐하면, classDoc 은 populate 로 가져오면 relatedIds 필드에
+ObjectId 대신 Student 의 문서가 채워지기 때문.
+
+// scoreDoc.relatedIds 는 배열로 저장된 객체임.
+{
+    "_id": "classDocumentId",
+    "classNo": 3,
+    "relatedIds": [
+        {
+            "_id": "student1Id",
+            "name": "John",
+            "height": 170
+        },
+        {
+            "_id": "student2Id",
+            "name": "Jane",
+            "height": 160
+        }
+    ]
+}
+
+그 안에서 또 특정 studentId 를 가진 문서를 찾으려면 배열의 함수를 이용해야함.
+const studentDoc = scoreDoc.relatedIds.find(student => student._id.toString() === studentId.toString());
+
+*/
