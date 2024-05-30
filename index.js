@@ -220,6 +220,7 @@ app.post('/api/checkmatch', async (req, res) => {
 
     try {
         const matchState = await Users.findOne({ _id: userId }, "matchState");
+        console.log("matchState: ", matchState);
         res.status(200).json({ matchState: matchState });
 
     } catch (error) {
