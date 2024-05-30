@@ -235,14 +235,23 @@ app.put('/api/choosematch', async (req, res) => {
     const { userId, matchState } = req.body;
 
     try {
-        const user = await Users.findOne({ _id: userId });
-        user.matchState = matchState;
-        await user.save();
-
-        // 매칭된 유저 조회
+        // 매칭된 유저 상대 유저 먼저 조회
         const chatSession = await ChatSessions.findOne({ userIds: userId });
         const matchUserId = chatSession.userIds.find(id => id.toString() !== userId.toString());
         const matchUser = await Users.findOne({ _id: matchUserId });
+
+        // 만약 서로 동시에 매칭 페이지에 있을 때, 한명이 매칭을 거절하면,
+        // 다른 한 명이 나중에 수락해봤자 여기서 notMatched 로 설정됨.
+        if (matchUser.matchState === "notMatched") {
+            user.matchState = "notMatched";
+            await user.save();
+            res.json({ matchState: "notMatched" });
+            return;
+        }
+
+        const user = await Users.findOne({ _id: userId });
+        user.matchState = matchState;
+        await user.save();
 
         // 수락하여 pending 상태가 됐으면 상대 유저의 상태도 체크
         if (matchState === "pending") {
