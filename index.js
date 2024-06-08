@@ -29,7 +29,7 @@ app.options('*', cors());
 
 // 세션 정보를 저장할 DB
 const store = new MongoStore({
-    uri: process.env.MONGODB_URI,
+    mongoUrl: process.env.MONGODB_URI,
     collection: 'sessions'
 });
 
