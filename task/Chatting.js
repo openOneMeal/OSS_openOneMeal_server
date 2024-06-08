@@ -161,4 +161,4 @@ const onlineListener = (socket, matchSocket, chatSession, clients) => {
     });
 }
 
-module.exports = Chatting;
+export default Chatting;

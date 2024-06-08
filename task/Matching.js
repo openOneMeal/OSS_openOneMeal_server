@@ -64,4 +64,4 @@ const Matching = () => {
 };
 
 
-module.exports = Matching;
+export default Matching;
