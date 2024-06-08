@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { exec } from 'child_process';
-import Users from './model/Users.js';
-import ChatSessions from './model/ChatSessions.js';
+import Users from '../model/Users.js';
+import ChatSessions from '../model/ChatSessions.js';
 
 const Matching = () => {
     

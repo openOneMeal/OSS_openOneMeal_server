@@ -1,5 +1,5 @@
-import ChatSessions from './model/ChatSessions.js';
-import ChatLogs from './model/ChatLogs.js';
+import ChatSessions from '../model/ChatSessions.js';
+import ChatLogs from '../model/ChatLogs.js';
 
 // 연결된 클라이언트 목록을 저장할 객체
 const clients = {};

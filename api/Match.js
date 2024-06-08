@@ -1,7 +1,7 @@
 import express from 'express'
 const router = express.Router();
 import Users from '../model/Users.js';
-import ChatSessions from './model/ChatSessions.js';
+import ChatSessions from '../model/ChatSessions.js';
 
 router.post('/check', async (req, res) => {
     const { userId } = req.body;

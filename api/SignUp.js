@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import Users from '../model/Users.js';
-import ChatSessions from './model/ChatSessions.js';
+import ChatSessions from '../model/ChatSessions.js';
 
 const router = express.Router();
 
