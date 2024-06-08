@@ -5,6 +5,7 @@ const chatLogsSchema = new Schema({
     chatSessionId: {
         type: Schema.Types.ObjectId,
         ref: 'ChatSessions',
+        required: true,
     },
     // 이 항목을 참조시킬려면 코드가 복잡해지므로 채팅에 접속할 때 userId 를 통해 넘겨받는걸로
     sender: {

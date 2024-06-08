@@ -37,6 +37,7 @@ const usersSchema = new Schema({
         // enum: 허용 가능한 값을 제한
         enum: ['choose', 'notMatched', 'matched', 'pending'],
         default: 'notMatched',
+        required: true,
     },
     chatSessionId: {
         type: Schema.Types.ObjectId,
